@@ -65,6 +65,7 @@ def reinstall():
 def reset_states():
 	rdebug('state reset requested')
 	reactive.remove_state('storpool-beacon.package-installed')
+	reactive.remove_state('storpool-beacon.beacon-started')
 
 @reactive.hook('upgrade-charm')
 def remove_states_on_upgrade():
