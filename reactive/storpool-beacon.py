@@ -18,10 +18,10 @@ def rdebug(s):
 	with open('/tmp/storpool-charms.log', 'a') as f:
 		print('{tm} [beacon] {s}'.format(tm=time.ctime(), s=s), file=f)
 
-@reactive.when('storpool-repo-add.available', 'storpool-config.config-written')
+@reactive.when('storpool-repo-add.available', 'storpool-common.config-written')
 @reactive.when_not('storpool-beacon.package-installed')
 def install_package():
-	rdebug('the beacon repo has become available and we do have the configuration')
+	rdebug('the beacon repo has become available and the common packages have been configured')
 	hookenv.status_set('maintenance', 'installing the StorPool beacon packages')
 	(err, newly_installed) = sprepo.install_packages({
 		'storpool-beacon': '16.02.25.744ebef-1ubuntu1',
@@ -41,14 +41,14 @@ def install_package():
 	reactive.set_state('storpool-beacon.package-installed')
 	hookenv.status_set('maintenance', '')
 
-@reactive.when('storpool-config.config-written', 'storpool-beacon.package-installed')
+@reactive.when('storpool-beacon.package-installed')
 @reactive.when('storpool-beacon.start-beacon')
 @reactive.when_not('storpool-beacon.beacon-started')
 def hmf():
 	rdebug('FIXME: try to start the beacon?')
 
 @reactive.when('storpool-beacon.package-installed')
-@reactive.when_not('storpool-config.config-written')
+@reactive.when_not('storpool-common.config-written')
 def reinstall():
 	reactive.remove_state('storpool-beacon.package-installed')
 
