@@ -10,7 +10,7 @@ from charmhelpers.core import templating
 
 from charms import reactive
 from charms.reactive import helpers as rhelpers
-from charmhelpers.core import hookenv
+from charmhelpers.core import hookenv, host
 
 from spcharms import repo as sprepo
 
@@ -20,6 +20,7 @@ def rdebug(s):
 
 @reactive.when('storpool-repo-add.available', 'storpool-common.config-written')
 @reactive.when_not('storpool-beacon.package-installed')
+@reactive.when_not('storpool-beacon.stopping')
 def install_package():
 	rdebug('the beacon repo has become available and the common packages have been configured')
 	hookenv.status_set('maintenance', 'installing the StorPool beacon packages')
@@ -42,18 +43,39 @@ def install_package():
 	hookenv.status_set('maintenance', '')
 
 @reactive.when('storpool-beacon.package-installed')
-@reactive.when('storpool-beacon.start-beacon')
 @reactive.when_not('storpool-beacon.beacon-started')
-def hmf():
-	rdebug('FIXME: try to start the beacon?')
+@reactive.when_not('storpool-beacon.stopping')
+def enable_and_start():
+	rdebug('enabling and starting the beacon service')
+	host.service_resume('storpool_beacon')
+	reactive.set_state('storpool-beacon.beacon-started')
+
+@reactive.when('storpool-beacon.beacon-started')
+@reactive.when_not('storpool-beacon.package-installed')
+@reactive.when_not('storpool-beacon.stopping')
+def restart():
+	reactive.remove_state('storpool-beacon.beacon-started')
 
 @reactive.when('storpool-beacon.package-installed')
 @reactive.when_not('storpool-common.config-written')
+@reactive.when_not('storpool-beacon.stopping')
 def reinstall():
 	reactive.remove_state('storpool-beacon.package-installed')
+
+def reset_states():
+	rdebug('state reset requested')
+	reactive.remove_state('storpool-beacon.package-installed')
+
+@reactive.hook('upgrade-charm')
+def remove_states_on_upgrade():
+	rdebug('storpool-beacon.upgrade-charm invoked')
+	reset_states()
 
 @reactive.hook('stop')
 def remove_leftovers():
 	rdebug('storpool-beacon.stop invoked')
-	reactive.remove_state('storpool-beacon.package-installed')
-	rdebug('FIXME: disable a service or something?')
+	reactive.set_state('storpool-beacon.stopping')
+	reset_states()
+
+	rdebug('stopping and disabling the storpool_beacon service')
+	host.service_pause('storpool_beacon')
