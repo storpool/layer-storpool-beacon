@@ -20,12 +20,19 @@ def rdebug(s):
 
 @reactive.when('storpool-repo-add.available', 'storpool-common.config-written')
 @reactive.when_not('storpool-beacon.package-installed')
-@reactive.when_not('storpool-beacon.stopping')
+@reactive.when_not('storpool-beacon.stopped')
 def install_package():
 	rdebug('the beacon repo has become available and the common packages have been configured')
+
+	hookenv.status_set('maintenance', 'obtaining the requested StorPool version')
+	spver = hookenv.config().get('storpool_version', None)
+	if spver is None or spver == '':
+		rdebug('no storpool_version key in the charm config yet')
+		return
+
 	hookenv.status_set('maintenance', 'installing the StorPool beacon packages')
 	(err, newly_installed) = sprepo.install_packages({
-		'storpool-beacon': '16.02.25.744ebef-1ubuntu1',
+		'storpool-beacon': spver,
 	})
 	if err is not None:
 		rdebug('oof, we could not install packages: {err}'.format(err=err))
@@ -44,7 +51,7 @@ def install_package():
 
 @reactive.when('storpool-beacon.package-installed')
 @reactive.when_not('storpool-beacon.beacon-started')
-@reactive.when_not('storpool-beacon.stopping')
+@reactive.when_not('storpool-beacon.stopped')
 def enable_and_start():
 	rdebug('enabling and starting the beacon service')
 	host.service_resume('storpool_beacon')
@@ -52,13 +59,13 @@ def enable_and_start():
 
 @reactive.when('storpool-beacon.beacon-started')
 @reactive.when_not('storpool-beacon.package-installed')
-@reactive.when_not('storpool-beacon.stopping')
+@reactive.when_not('storpool-beacon.stopped')
 def restart():
 	reactive.remove_state('storpool-beacon.beacon-started')
 
 @reactive.when('storpool-beacon.package-installed')
 @reactive.when_not('storpool-common.config-written')
-@reactive.when_not('storpool-beacon.stopping')
+@reactive.when_not('storpool-beacon.stopped')
 def reinstall():
 	reactive.remove_state('storpool-beacon.package-installed')
 
@@ -72,11 +79,17 @@ def remove_states_on_upgrade():
 	rdebug('storpool-beacon.upgrade-charm invoked')
 	reset_states()
 
-@reactive.hook('stop')
+@reactive.when('storpool-beacon.stop')
+@reactive.when_not('storpool-beacon.stopped')
 def remove_leftovers():
 	rdebug('storpool-beacon.stop invoked')
-	reactive.set_state('storpool-beacon.stopping')
-	reset_states()
+	reactive.remove_state('storpool-beacon.stop')
 
 	rdebug('stopping and disabling the storpool_beacon service')
 	host.service_pause('storpool_beacon')
+
+	rdebug('letting storpool-common know')
+	reactive.set_state('storpool-common.stop')
+
+	reset_states()
+	reactive.set_state('storpool-beacon.stopped')
