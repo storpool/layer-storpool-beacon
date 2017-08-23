@@ -41,7 +41,7 @@ def install_package():
 
 	if newly_installed:
 		rdebug('it seems we managed to install some packages: {names}'.format(names=newly_installed))
-		sprepo.record_packages(newly_installed)
+		sprepo.record_packages('storpool-beacon', newly_installed)
 	else:
 		rdebug('it seems that all the packages were installed already')
 
@@ -87,6 +87,9 @@ def remove_leftovers():
 
 	rdebug('stopping and disabling the storpool_beacon service')
 	host.service_pause('storpool_beacon')
+
+	rdebug('uninstalling any beacon-related packages')
+	sprepo.unrecord_packages('storpool-beacon')
 
 	rdebug('letting storpool-common know')
 	reactive.set_state('storpool-common.stop')
