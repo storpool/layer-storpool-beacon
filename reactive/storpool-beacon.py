@@ -15,19 +15,22 @@ def rdebug(s):
 @reactive.when_not('storpool-beacon.package-installed')
 @reactive.when_not('storpool-beacon.stopped')
 def install_package():
-    rdebug('the beacon repo has become available and the common packages have been configured')
+    rdebug('the beacon repo has become available and '
+           'the common packages have been configured')
     if sputils.check_in_lxc():
         rdebug('running in an LXC container, not doing anything more')
         reactive.set_state('storpool-beacon.package-installed')
         return
 
-    hookenv.status_set('maintenance', 'obtaining the requested StorPool version')
+    hookenv.status_set('maintenance',
+                       'obtaining the requested StorPool version')
     spver = hookenv.config().get('storpool_version', None)
     if spver is None or spver == '':
         rdebug('no storpool_version key in the charm config yet')
         return
 
-    hookenv.status_set('maintenance', 'installing the StorPool beacon packages')
+    hookenv.status_set('maintenance',
+                       'installing the StorPool beacon packages')
     (err, newly_installed) = sprepo.install_packages({
         'storpool-beacon': spver,
     })
@@ -37,7 +40,8 @@ def install_package():
         return
 
     if newly_installed:
-        rdebug('it seems we managed to install some packages: {names}'.format(names=newly_installed))
+        rdebug('it seems we managed to install some packages: {names}'
+               .format(names=newly_installed))
         sprepo.record_packages('storpool-beacon', newly_installed)
     else:
         rdebug('it seems that all the packages were installed already')
