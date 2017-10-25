@@ -6,8 +6,10 @@ from charmhelpers.core import hookenv, host
 from spcharms import repo as sprepo
 from spcharms import utils as sputils
 
+
 def rdebug(s):
     sputils.rdebug(s, prefix='beacon')
+
 
 @reactive.when('storpool-repo-add.available', 'storpool-common.config-written')
 @reactive.when_not('storpool-beacon.package-installed')
@@ -44,6 +46,7 @@ def install_package():
     reactive.set_state('storpool-beacon.package-installed')
     hookenv.status_set('maintenance', '')
 
+
 @reactive.when('storpool-beacon.package-installed')
 @reactive.when_not('storpool-beacon.beacon-started')
 @reactive.when_not('storpool-beacon.stopped')
@@ -57,11 +60,13 @@ def enable_and_start():
     host.service_resume('storpool_beacon')
     reactive.set_state('storpool-beacon.beacon-started')
 
+
 @reactive.when('storpool-beacon.beacon-started')
 @reactive.when_not('storpool-beacon.package-installed')
 @reactive.when_not('storpool-beacon.stopped')
 def restart():
     reactive.remove_state('storpool-beacon.beacon-started')
+
 
 @reactive.when('storpool-beacon.package-installed')
 @reactive.when_not('storpool-common.config-written')
@@ -69,15 +74,18 @@ def restart():
 def reinstall():
     reactive.remove_state('storpool-beacon.package-installed')
 
+
 def reset_states():
     rdebug('state reset requested')
     reactive.remove_state('storpool-beacon.package-installed')
     reactive.remove_state('storpool-beacon.beacon-started')
 
+
 @reactive.hook('upgrade-charm')
 def remove_states_on_upgrade():
     rdebug('storpool-beacon.upgrade-charm invoked')
     reset_states()
+
 
 @reactive.when('storpool-beacon.stop')
 @reactive.when_not('storpool-beacon.stopped')
