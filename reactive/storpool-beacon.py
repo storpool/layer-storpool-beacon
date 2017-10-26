@@ -72,6 +72,9 @@ def enable_and_start():
         reactive.set_state('storpool-beacon.beacon-started')
         return
 
+    if not sputils.check_cgroups('beacon'):
+        return
+
     rdebug('enabling and starting the beacon service')
     host.service_resume('storpool_beacon')
     reactive.set_state('storpool-beacon.beacon-started')
