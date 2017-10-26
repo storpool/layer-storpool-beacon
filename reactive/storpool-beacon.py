@@ -7,6 +7,7 @@ from charms import reactive
 from charmhelpers.core import hookenv, host
 
 from spcharms import repo as sprepo
+from spcharms import status as spstatus
 from spcharms import utils as sputils
 
 
@@ -31,15 +32,13 @@ def install_package():
         reactive.set_state('storpool-beacon.package-installed')
         return
 
-    hookenv.status_set('maintenance',
-                       'obtaining the requested StorPool version')
+    spstatus.npset('maintenance', 'obtaining the requested StorPool version')
     spver = hookenv.config().get('storpool_version', None)
     if spver is None or spver == '':
         rdebug('no storpool_version key in the charm config yet')
         return
 
-    hookenv.status_set('maintenance',
-                       'installing the StorPool beacon packages')
+    spstatus.npset('maintenance', 'installing the StorPool beacon packages')
     (err, newly_installed) = sprepo.install_packages({
         'storpool-beacon': spver,
     })
@@ -57,7 +56,7 @@ def install_package():
 
     rdebug('setting the package-installed state')
     reactive.set_state('storpool-beacon.package-installed')
-    hookenv.status_set('maintenance', '')
+    spstatus.npset('maintenance', '')
 
 
 @reactive.when('storpool-beacon.package-installed')
