@@ -6,7 +6,7 @@ A set of unit tests for the storpool-beacon layer.
 
 import os
 import sys
-import testtools
+import unittest
 
 import mock
 
@@ -119,7 +119,7 @@ INSTALLED_STATE = 'storpool-beacon.package-installed'
 STARTED_STATE = 'storpool-beacon.beacon-started'
 
 
-class TestStorPoolBeacon(testtools.TestCase):
+class TestStorPoolBeacon(unittest.TestCase):
     """
     Test various aspects of the storpool-beacon layer.
     """
