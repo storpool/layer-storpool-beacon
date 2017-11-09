@@ -7,8 +7,17 @@ from charms import reactive
 from charmhelpers.core import hookenv, host
 
 from spcharms import repo as sprepo
+from spcharms import states as spstates
 from spcharms import status as spstatus
 from spcharms import utils as sputils
+
+STATES_REDO = {
+    'set': [],
+    'unset': [
+        'storpool-beacon.package-installed',
+        'storpool-beacon.beacon-started',
+    ],
+}
 
 
 def rdebug(s):
@@ -99,22 +108,12 @@ def reinstall():
     reactive.remove_state('storpool-beacon.package-installed')
 
 
-def reset_states():
+@reactive.hook('install')
+def register_states():
     """
-    Trigger a full reinstall-restart cycle.
+    Register for a full reinstall upon an upgrade-charm event.
     """
-    rdebug('state reset requested')
-    reactive.remove_state('storpool-beacon.package-installed')
-    reactive.remove_state('storpool-beacon.beacon-started')
-
-
-@reactive.hook('upgrade-charm')
-def remove_states_on_upgrade():
-    """
-    Reinstall and restart upon charm upgrade.
-    """
-    rdebug('storpool-beacon.upgrade-charm invoked')
-    reset_states()
+    spstates.register('storpool-beacon', {'upgrade-charm': STATES_REDO})
 
 
 @reactive.when('storpool-beacon.stop')
@@ -136,5 +135,6 @@ def remove_leftovers():
     rdebug('letting storpool-common know')
     reactive.set_state('storpool-common.stop')
 
-    reset_states()
     reactive.set_state('storpool-beacon.stopped')
+    for state in STATES_REDO['set'] + STATES_REDO['unset']:
+        reactive.remove_state(state)
